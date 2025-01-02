@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const signup = async (req, res) => {
   const { username, email, password } = req.body;
+  console.log(req.body);
 
   try {
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -25,17 +26,20 @@ const signup = async (req, res) => {
     res.status(201).json({ message: "User created", token, userId: user._id });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error creating user" });
+    res.status(500).json({ message: "Error creating user" + error });
   }
 };
 
 const login = async (req, res) => {
   const { identifier, password } = req.body;
+  console.log(req.body);
 
   try {
     const user = await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],
     });
+
+    console.log(user);
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -48,12 +52,16 @@ const login = async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
-    res
-      .status(200)
-      .json({ message: "Login successful", token, userId: user._id });
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      userId: user._id,
+      username: user.username,
+      email: user.email,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error logging in" });
+    res.status(500).json({ message: "Error logging in" + error });
   }
 };
 

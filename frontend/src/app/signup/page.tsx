@@ -1,6 +1,7 @@
 "use client";
 import Head from "next/head";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { useState } from "react";
 
 const Signup: React.FC = () => {
@@ -8,9 +9,38 @@ const Signup: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const localStorage = window.localStorage;
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: Implement signup logic here (e.g., API call)
+
+    const res = await fetch("http://localhost:5500/api/auth/signup", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({ email, username, password }),
+    });
+
+    if (res.ok) {
+      // Redirect to dashboard
+      const data = await res.json();
+      if (!(data.message === "User created") || !data.token) {
+        alert("Something went wrong. Please try again later.");
+        return;
+      }
+      localStorage.clear();
+      localStorage.setItem("user", JSON.stringify(data.username));
+      localStorage.setItem("email", email);
+      localStorage.setItem("token", data.token);
+
+      redirect("/dashboard");
+    } else {
+      // Handle signup error
+      const data = await res.json();
+      alert(data.message);
+    }
+
     console.log("Signup submitted with:", { email, username, password });
   };
 

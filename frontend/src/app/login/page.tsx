@@ -1,16 +1,46 @@
 "use client";
 import Head from "next/head";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { useState } from "react";
 
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const localStorage = window.localStorage;
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: Implement login logic here (e.g., API call)
-    console.log("Login submitted with:", { identifier, password });
+
+    const res = await fetch("http://localhost:5500/api/auth/login", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({ identifier, password }),
+    });
+
+    console.log(res);
+    if (res.ok) {
+      // Redirect to dashboard
+      const data = await res.json();
+      if (!(data.message === "Login successful") || !data.token) {
+        console.log(data);
+        alert("Login failed. Please try again.");
+        return;
+      }
+      localStorage.clear();
+      localStorage.setItem("user", JSON.stringify(data.username));
+      localStorage.setItem("email", JSON.stringify(data.email));
+      localStorage.setItem("token", data.token);
+
+      redirect("/dashboard");
+    } else {
+      // Handle login error
+      const data = await res.json();
+      alert(data.message);
+    }
   };
 
   return (

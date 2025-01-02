@@ -1,12 +1,12 @@
 "use client";
 import Head from "next/head";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Type definition for a transaction (expense or income)
 interface Transaction {
   id: number;
-  date: string;
-  description?: string; // Description is now optional
+  date: string; // Date in ISO format (e.g., "2024-02-05")
+  description?: string; // Description is optional
   amount: number;
   category: string;
   type: "expense" | "income"; // 'expense' or 'income'
@@ -72,6 +72,12 @@ const Dashboard: React.FC = () => {
     }, // Example with optional description
   ]);
 
+  // State for total income
+  const [totalIncome, setTotalIncome] = useState<number>(0);
+
+  // State for total expense
+  const [totalExpense, setTotalExpense] = useState<number>(0);
+
   // State for new transaction form
   const [newTransaction, setNewTransaction] = useState<Omit<Transaction, "id">>(
     {
@@ -82,18 +88,31 @@ const Dashboard: React.FC = () => {
     }
   );
 
-  // Function to calculate total income
-  const totalIncome = transactions
-    .filter((transaction) => transaction.type === "income")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+  useEffect(() => {
+    // Function to calculate total income
+    setTotalIncome(
+      transactions
+        .filter((transaction) => transaction.type === "income")
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+    );
 
-  // Function to calculate total expense
-  const totalExpense = transactions
-    .filter((transaction) => transaction.type === "expense")
-    .reduce((sum, transaction) => sum + transaction.amount, 0);
+    // Function to calculate total expense
+    setTotalExpense(
+      transactions
+        .filter((transaction) => transaction.type === "expense")
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+    );
+    console.log(
+      "Transactions Updated:",
+      transactions,
+      totalIncome,
+      totalExpense
+    );
+  }, [transactions]);
 
-  // Function to calculate net income
-  const netIncome = totalIncome - totalExpense;
+  useEffect(() => {
+    console.log("New Transaction Updated:", newTransaction);
+  }, [newTransaction]);
 
   // Function to add a new transaction (expense or income)
   const handleAddTransaction = (event: React.FormEvent) => {
@@ -105,6 +124,7 @@ const Dashboard: React.FC = () => {
 
     setTransactions([...transactions, { id: newId, ...newTransaction }]);
 
+    console.log("New Transaction Added:", newTransaction);
     //Reset Form
     setNewTransaction({
       date: new Date().toISOString().split("T")[0],
@@ -112,6 +132,13 @@ const Dashboard: React.FC = () => {
       category: "",
       type: "expense",
     });
+  };
+
+  // Function to delete a transaction by ID
+  const handleDeleteTransaction = (id: number) => {
+    setTransactions(
+      transactions.filter((transaction) => transaction.id !== id)
+    );
   };
 
   // Function to handle changes in new transaction form
@@ -123,7 +150,18 @@ const Dashboard: React.FC = () => {
     const { name, value } = e.target;
 
     setNewTransaction((prevTransaction) => {
-      const updatedTransaction = { ...prevTransaction, [name]: value };
+      const updatedTransaction = {
+        ...prevTransaction,
+        [name]:
+          name === "amount"
+            ? value === null ||
+              undefined ||
+              value === "" ||
+              isNaN(parseFloat(value))
+              ? 0
+              : parseFloat(value)
+            : value,
+      };
       if (name === "description" && value === "") {
         delete updatedTransaction.description; // Delete when empty for optional
       }
@@ -168,17 +206,19 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-300 text-lg">
                 Total Expenses:
                 <span className="text-red-400 font-bold ml-1">
-                  ${totalExpense.toFixed(2)}
+                  ${totalExpense}
                 </span>
               </p>
               <p className="text-gray-300 text-lg">
                 Net Income:
                 <span
                   className={`${
-                    netIncome >= 0 ? "text-green-400" : "text-red-400"
+                    totalIncome - totalExpense >= 0
+                      ? "text-green-400"
+                      : "text-red-400"
                   } font-bold ml-1`}
                 >
-                  ${netIncome.toFixed(2)}
+                  ${(totalIncome - totalExpense).toFixed(2)}
                 </span>
               </p>
             </div>
@@ -197,6 +237,7 @@ const Dashboard: React.FC = () => {
                   <th className="py-2 text-left">Amount</th>
                   <th className="py-2 text-left">Category</th>
                   <th className="py-2 text-left">Type</th>
+                  <th className="py-2 text-left"></th>
                 </tr>
               </thead>
               <tbody>
@@ -207,7 +248,7 @@ const Dashboard: React.FC = () => {
                   >
                     <td className="py-2">{transaction.date}</td>
                     <td className="py-2">{transaction.description || "—"}</td>
-                    <td className="py-2">${transaction.amount.toFixed(2)}</td>
+                    <td className="py-2">${transaction.amount}</td>
                     <td className="py-2">{transaction.category}</td>
                     <td className="py-2">
                       <span
@@ -219,6 +260,14 @@ const Dashboard: React.FC = () => {
                       >
                         {transaction.type}
                       </span>
+                    </td>
+                    <td className="py-2">
+                      <button
+                        className="text-red-600 hover:underline ml-2"
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
