@@ -8,8 +8,6 @@ const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
-  const localStorage = window.localStorage;
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -34,6 +32,7 @@ const Login: React.FC = () => {
       localStorage.setItem("user", JSON.stringify(data.username));
       localStorage.setItem("email", JSON.stringify(data.email));
       localStorage.setItem("token", data.token);
+      localStorage.setItem("id", data.userId);
 
       redirect("/dashboard");
     } else {
@@ -55,7 +54,7 @@ const Login: React.FC = () => {
 
       <div className="bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          Login
+          Log In
         </h2>
         <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
           <div>

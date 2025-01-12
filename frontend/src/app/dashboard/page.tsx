@@ -1,6 +1,7 @@
 "use client";
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 
 // Type definition for a transaction (expense or income)
 interface Transaction {
@@ -10,6 +11,13 @@ interface Transaction {
   amount: number;
   category: string;
   type: "expense" | "income"; // 'expense' or 'income'
+}
+
+interface User {
+  id: string;
+  username: string | null;
+  email: string | null;
+  token: string | null;
 }
 
 const Dashboard: React.FC = () => {
@@ -72,6 +80,8 @@ const Dashboard: React.FC = () => {
     }, // Example with optional description
   ]);
 
+  const [user, setUser] = useState<User>();
+
   // State for total income
   const [totalIncome, setTotalIncome] = useState<number>(0);
 
@@ -87,6 +97,37 @@ const Dashboard: React.FC = () => {
       type: "expense", // Default to expense
     }
   );
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const email = JSON.parse(localStorage.getItem("email"));
+    const id = JSON.parse(localStorage.getItem("id"));
+    const token = localStorage.getItem("token");
+
+    if (!user || !email || !token) {
+      redirect("/login");
+    }
+
+    setUser({ username: user, email, token, id });
+  }, []);
+
+  const fetchTransactions = async () => {
+    const res = await fetch("http://localhost:5500/api/transactions", {
+      headers: {
+        Authorization: `Bearer ${user?.token}`,
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+      body: JSON.stringify({ userId: user?.id }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setTransactions(data.transactions);
+    } else {
+      alert("Failed to fetch transactions. Please try again later.");
+    }
+  };
 
   useEffect(() => {
     // Function to calculate total income

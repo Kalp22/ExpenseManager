@@ -9,8 +9,6 @@ const Signup: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const localStorage = window.localStorage;
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -33,6 +31,7 @@ const Signup: React.FC = () => {
       localStorage.setItem("user", JSON.stringify(data.username));
       localStorage.setItem("email", email);
       localStorage.setItem("token", data.token);
+      localStorage.setItem("id", data.userId);
 
       redirect("/dashboard");
     } else {

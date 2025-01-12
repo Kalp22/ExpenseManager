@@ -22,7 +22,7 @@ const addTransaction = async (req, res) => {
 };
 
 const getTransactions = async (req, res) => {
-  const userId = req.user.userId;
+  const { userId } = req.body;
 
   try {
     const transactions = await Transaction.find({ user: userId }).sort({
